@@ -51,6 +51,8 @@ struct linux_dirent {
 	unsigned long d_off;     /* Offset to next linux_dirent */
 	unsigned short d_reclen;  /* Length of this linux_dirent */
 	char d_name[];  /* Filename (null-terminated) */
+	char pad;
+	cahr d_type;
 };
 
 /* Hacked Syscall Pointers */
