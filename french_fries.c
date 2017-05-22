@@ -21,11 +21,12 @@ void RunBD(){
 
 int main(){
 	printf("--- Potato Peeler ---\n--- A LKM Rootkit ---\n(1) Hide Process\n(2) Run Backdoor\n(3) Exit\n");
-	char choice = getchar();
-	if(strcmp(&choice, "1") == 0){
+	int choice;
+	scanf("%d", &choice);
+	if(choice == 1){
 		HidePID();
 	}
-	if(strcmp(&choice, "2") == 0){
+	if(choice == 2){
 		RunBD();
 	}
 	return 0;
