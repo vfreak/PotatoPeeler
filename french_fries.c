@@ -16,7 +16,7 @@ void ShowPID(){
 }
 
 void RunBD(){
-	execve("/p07470p33l3r/irishman", NULL, NULL);
+	execve("/Imma/Firin/Muh/Lazer", NULL, NULL);
 }
 
 int main(){
