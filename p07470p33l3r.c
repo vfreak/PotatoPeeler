@@ -12,7 +12,6 @@
 #include <linux/sched.h>
 #include <linux/fs_struct.h>
 #include <linux/kmod.h>
-#include <linux/init.h>
 
 /* WARNING! If you insmod this module without commenting out the module hiding lines,
 you won't be able to rmmod it. Brick your system and no one will feel bad for you */
